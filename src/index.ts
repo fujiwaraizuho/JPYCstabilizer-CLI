@@ -44,21 +44,23 @@ const watchRate = async (account: Account) => {
     const balance = await account.getBalance();
     const rateData = await getRate(account.getContract('JPYC_USDC_RATE'));
 
-    console.log(`[JPYCStabilizer] ${rateData.rate} USDC/JPYC`)
+    console.log(`[JPYCStabilizer] ${rateData.rate} USDC/JPYC`);
 
     if (!balance) return;
 
+    const maxGas = parseFloat(process.env.SWAP_GAS_MAX);
+
     if (
-        rateData.rate > 118.0 &&
+        rateData.rate > parseFloat(process.env.UPPER_THRESHOLD) &&
         parseFloat(web3.utils.fromWei(balance.usdc, 'mwei')) > 1
     ) {
         if (!flagSwapping) {
             flagSwapping = true;
-            console.log(`[JPYCStabilizer] USDC -> JPYC Swapping Start!`);
+            console.log(`[JPYCStabilizer] USDC -> JPYC Swap!`);
 
             const bl = parseFloat(web3.utils.fromWei(balance.usdc, 'mwei')) * 0.99999;
-            const amount = bl > 200 ? 200 : bl;
-            const minAmount = amount * rateData.rate * (1.0 - 0.006);
+            const amount = bl > 400 ? 400 : bl;
+            const minAmount = amount * rateData.rate * (1.0 - parseFloat(process.env.SWAP_SLIPPAGE));
             
             await goSwap(
                 web3,
@@ -68,23 +70,23 @@ const watchRate = async (account: Account) => {
                 "JPYC",
                 amount,
                 minAmount,
-                gas < 500 ? gas : 500,
+                gas < maxGas ? gas : maxGas,
                 common
             );
 
             flagSwapping = false;
         }
     } else if (
-        rateData.rate < 116.0 &&
+        rateData.rate < parseFloat(process.env.LOWER_THRESHOLD) &&
         parseFloat(web3.utils.fromWei(balance.jpyc)) > 100
     ) {
         if (!flagSwapping) {
             flagSwapping = true;
-            console.log(`[JPYCStabilizer] JPYC -> USDC Swapping Start!`);
+            console.log(`[JPYCStabilizer] JPYC -> USDC Swap!`);
 
             const bl = parseFloat(web3.utils.fromWei(balance.jpyc)) * 0.99999;
-            const amount = bl > 20000 ? 20000 : bl;
-            const minAmount = (amount / rateData.rate) * (1.0 - 0.006);
+            const amount = bl > 40000 ? 40000 : bl;
+            const minAmount = (amount / rateData.rate) * (1.0 - parseFloat(process.env.SWAP_SLIPPAGE));
             
             await goSwap(
                 web3,
@@ -94,7 +96,7 @@ const watchRate = async (account: Account) => {
                 "JPYC",
                 amount,
                 minAmount,
-                gas < 500 ? gas : 500,
+                gas < maxGas ? gas : maxGas,
                 common
             );
 

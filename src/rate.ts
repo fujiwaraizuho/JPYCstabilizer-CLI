@@ -1,7 +1,8 @@
 import { Contract } from 'web3-eth-contract';
 
 export const getRate = async (contractRate: Contract) => {
-    const result = await contractRate.methods
+    try {
+        const result = await contractRate.methods
         .getReserves()
         .call()
         .then((values: any) => {
@@ -11,11 +12,15 @@ export const getRate = async (contractRate: Contract) => {
             };
         })
 
-    const rateRaw = result.jpyc / result.usdc;
+        const rateRaw = result.jpyc / result.usdc;
 
-    return {
-        rate: Math.floor(rateRaw * Math.pow(10, 2)) / Math.pow(10, 2),
-        rateRaw,
-        ...result
-    };
+        return {
+            rate: Math.floor(rateRaw * Math.pow(10, 2)) / Math.pow(10, 2),
+            rateRaw,
+            ...result
+        };
+    } catch (error) {
+        console.log(error);
+        console.log(`[JPYCStabilizer] getRate Error!`);
+    }
 }

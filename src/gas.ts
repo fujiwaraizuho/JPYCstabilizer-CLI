@@ -1,11 +1,24 @@
 import axios from 'axios';
 
-type Response = {
-    fastest: number
+type Result = {
+    data: {
+        fastest: number
+    }
 };
 
 export const getGas = async () => {
-    const response = await axios.get('https://gasstation-mainnet.matic.network');
+    let result = {
+        data: {
+            fastest: 100
+        }
+    };
 
-    return response.data as Response;
+    try {
+        result = await axios.get('https://gasstation-mainnet.matic.network') as Result;
+    } catch (error) {
+        console.log(error);
+        console.log(`[JPYCStabilizer] getGas Error!`);
+    }
+
+    return result.data;
 }

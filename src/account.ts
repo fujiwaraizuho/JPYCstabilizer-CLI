@@ -144,7 +144,7 @@ export default class Account {
             tokenAmountToApprove.mul(this.web3.utils.toBN(10).pow(tokenDecimals))
         );
 
-        const approveToken = tokenContract.methods.approve(process.env.QUICKSWAP_ROUTER_CONTRACT_ADDRESS, approveValue).encodeABI();
+        const approveToken = tokenContract.methods.approve(this.getContractAddress('ROUTER'), approveValue).encodeABI();
 
         const nonce = await this.web3.eth.getTransactionCount(this.getAddress(), 'pending');
 
@@ -164,10 +164,10 @@ export default class Account {
 
         await this.web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
             .once('transactionHash', (hash: string) => {
-                console.log(`[JPYCStabilizer] Approving TXID: ${hash}`);
+                console.log(`[JPYCStabilizer] Approve TXID: ${hash}`);
             })
             .once('receipt', () => {
-                console.log(`[JPYCStabilizer] Success approved ${tokenName}`);
+                console.log(`[JPYCStabilizer] Success approve ${tokenName}`);
             });
     }
 }

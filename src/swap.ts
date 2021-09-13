@@ -24,8 +24,6 @@ export const goSwap = async (
     gas: number,
     common: Common
 ) => {
-    const timestamp = new Date();
-
     const amountInValue = Math.floor(amount * 10 ** decimals[from]) / 10 ** decimals[from];
     const amountIn = 
         from === "JPYC"
@@ -70,13 +68,13 @@ export const goSwap = async (
 
         await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
             .once('transactionHash', (hash: string) => {
-                console.log(`${timestamp} [JPYCStabilizer] Swaping TXID: ${hash}`);
+                console.log(`[JPYCStabilizer] Swap TXID: ${hash}`);
             })
             .once('receipt', () => {
-                console.log(`${timestamp} [JPYCStabilizer] Success Swap!`);
+                console.log(`[JPYCStabilizer] Success Swap!`);
             });
     } catch (error) {
         console.log(error);
-        console.log(`${timestamp} [JPYCStabilizer] Error Swap!`)
+        console.log(`JPYCStabilizer] Error Swap!`)
     } 
 }
