@@ -32,9 +32,9 @@ export const goSwap = async (
 
     const amountOutValue = Math.floor(minAmount * 10 ** decimals[to]) / 10 ** decimals[to];
     const amountOut =
-        to === "JPYC"
-            ? web3.utils.toWei(amountOutValue.toString())
-            : web3.utils.toWei(amountOutValue.toString(), 'mwei');
+        from === "JPYC"
+            ? web3.utils.toWei(amountOutValue.toString(), 'mwei')
+            : web3.utils.toWei(amountOutValue.toString());
 
     const tokenIn = account.getContractAddress(from);
     const tokenOut = account.getContractAddress(to);
