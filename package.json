@@ -1,0 +1,28 @@
+{
+  "name": "JPYCstabilizer-CLI",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "repository": "git@github.com:fujiwaraizuho/JPYCstabilizer-CLI.git",
+  "author": "Izuho Fujiwara <fujishan2212@gmail.com>",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "npm-run-all build start",
+    "build": "tsc -p .",
+    "start": "node ."
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@ethereumjs/common": "^2.4.0",
+    "@ethereumjs/tx": "^3.3.0",
+    "axios": "^0.21.4",
+    "dotenv": "^10.0.0",
+    "npm-run-all": "^4.1.5",
+    "web3": "^1.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "14",
+    "ts-node": "^10.2.1",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.4.3"
+  }
+}
