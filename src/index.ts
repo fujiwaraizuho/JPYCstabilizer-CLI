@@ -44,7 +44,7 @@ const watchRate = async (account: Account) => {
     const balance = await account.getBalance();
     const rateData = await getRate(account.getContract('JPYC_USDC_RATE'));
 
-    console.log(`[JPYCStabilizer] ${rateData.rate} USDC/JPYC`);
+    console.log(`[${Date.now()}][JPYCStabilizer] ${rateData.rate} USDC/JPYC`);
 
     if (!balance) return;
 
