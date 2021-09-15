@@ -1,10 +1,10 @@
 import Common from '@ethereumjs/common';
 import dotenv from 'dotenv';
 import Account from './account';
-import { getRate } from './rate';
+import { getJPYUSDRate, getRate } from './rate';
 import { getGas } from './gas';
 import { goSwap } from './swap';
-
+import { exit } from 'process';
 
 dotenv.config();
 
@@ -19,19 +19,30 @@ const common = Common.custom(
 );
 
 let gas = 0;
-
 let flagSwapping = false;
+
+let data = {
+    upper: 117.9,
+    lower: 115.9,
+    slippage: [
+        0.006, 0.0075
+    ]
+};
 
 const main = async () => {
     const account = new Account();
-    account.init();
 
-    await account.approveCoin('JPYC', common);
-    await account.approveCoin('USDC', common);
+    // await account.approveCoin('JPYC', common);
+    // await account.approveCoin('USDC', common);
 
-    gas = (await getGas()).fastest;  
+    account.getBalance(true);
+
+
+    gas = (await getGas()).fastest;
+
     setInterval(async () => {
-        gas = (await getGas()).fastest;
+        const gasData = await getGas();
+        gas = gasData.fastest + gasData.fast / 2;
     }, 1500);
 
     setInterval(async () => {
@@ -40,69 +51,83 @@ const main = async () => {
 }
 
 const watchRate = async (account: Account) => {
+    const slippages = await getJPYUSDRate();
+
+    data.upper = slippages.upper;
+    data.lower = slippages.lower;
+    
     const web3 = account.getWeb3();
+
     const balance = await account.getBalance();
-    const rateData = await getRate(account.getContract('JPYC_USDC_RATE'));
+    const rates = await getRate(account);
 
-    console.log(`[${Date.now()}][JPYCStabilizer] ${rateData.rate} USDC/JPYC`);
+    console.log(`[${Date.now()}][JPYCStabilizer] ${rates[0].rate} USDC-JPYC by QUICK`);
+    console.log(`[${Date.now()}][JPYCStabilizer] ${rates[1].rate} USDC-JPYC by SUSHI`);
 
-    if (!balance) return;
+    
+    let array = [0, 1];
 
-    const maxGas = parseFloat(process.env.SWAP_GAS_MAX);
-
-    if (
-        rateData.rate > parseFloat(process.env.UPPER_THRESHOLD) &&
-        parseFloat(web3.utils.fromWei(balance.usdc, 'mwei')) > 1
-    ) {
-        if (!flagSwapping) {
-            flagSwapping = true;
-            console.log(`[JPYCStabilizer] USDC -> JPYC Swap!`);
-
-            const bl = parseFloat(web3.utils.fromWei(balance.usdc, 'mwei')) * 0.99999;
-            const amount = bl > 400 ? 400 : bl;
-            const minAmount = amount * rateData.rate * (1.0 - parseFloat(process.env.SWAP_SLIPPAGE));
-            
-            await goSwap(
-                web3,
-                account,
-                account.getContract('ROUTER'),
-                "USDC",
-                "JPYC",
-                amount,
-                minAmount,
-                gas < maxGas ? gas : maxGas,
-                common
-            );
-
-            flagSwapping = false;
-        }
-    } else if (
-        rateData.rate < parseFloat(process.env.LOWER_THRESHOLD) &&
-        parseFloat(web3.utils.fromWei(balance.jpyc)) > 100
-    ) {
-        if (!flagSwapping) {
-            flagSwapping = true;
-            console.log(`[JPYCStabilizer] JPYC -> USDC Swap!`);
-
-            const bl = parseFloat(web3.utils.fromWei(balance.jpyc)) * 0.99999;
-            const amount = bl > 40000 ? 40000 : bl;
-            const minAmount = (amount / rateData.rate) * (1.0 - parseFloat(process.env.SWAP_SLIPPAGE));
-            
-            await goSwap(
-                web3,
-                account,
-                account.getContract('ROUTER'),
-                "JPYC",
-                "USDC",
-                amount,
-                minAmount,
-                gas < maxGas ? gas : maxGas,
-                common
-            );
-
-            flagSwapping = false;
-        }
+    if (Math.random() > 0.5) {
+        array = array.reverse();
     }
+
+    array.forEach(async (i) => {
+        if (rates[i].rate > data.upper &&
+            parseFloat(web3.utils.fromWei(balance.USDC, 'mwei')) > 1
+        ) {
+            if (!flagSwapping) {
+                flagSwapping = true;
+
+                console.log(`[JPYCStabilizer] USDC -> JPYC Swap by ${account.markets[i]}`);
+                
+                const bl = parseFloat(web3.utils.fromWei(balance.USDC, 'mwei')) * 0.99999;
+                const amount = bl > 200 ? 200 : bl;
+                const minAmount = amount * rates[i].rate * (1.0 - data.slippage[i]);
+
+                await goSwap(
+                    web3,
+                    account,
+                    i,
+                    "USDC",
+                    "JPYC",
+                    amount,
+                    minAmount,
+                    gas < 300 ? gas : 300,
+                    common
+                );
+
+
+                flagSwapping = false;
+            }
+        } else if (
+            rates[i].rate < data.lower &&
+            parseFloat(web3.utils.fromWei(balance.JPYC)) > 100
+        ) {
+            if (!flagSwapping) {
+                flagSwapping = true;
+
+                console.log(`[JPYCStabilizer] JPYC -> USDC Swap by ${account.markets[i]}`);
+                
+                const bl = parseFloat(web3.utils.fromWei(balance.JPYC)) * 0.99999;
+                const amount = bl > 20000 ? 20000 : bl;
+                const minAmont = (amount / rates[i].rate) * (1.0 - data.slippage[i]);
+
+                await goSwap(
+                    web3,
+                    account,
+                    i,
+                    "JPYC",
+                    "USDC",
+                    amount,
+                    minAmont,
+                    gas < 300 ? gas : 300,
+                    common
+                );
+
+                flagSwapping = false;
+            }
+        }
+    })
 }
 
 main();

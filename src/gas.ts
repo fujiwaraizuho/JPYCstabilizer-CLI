@@ -2,6 +2,7 @@ import axios from 'axios';
 
 type Result = {
     data: {
+        fast: number,
         fastest: number
     }
 };
@@ -9,7 +10,8 @@ type Result = {
 export const getGas = async () => {
     let result = {
         data: {
-            fastest: 100
+            fastest: 100,
+            fast: 30
         }
     };
 

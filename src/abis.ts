@@ -1,6 +1,6 @@
 import { AbiItem } from "web3-utils";
 
-export const abi: AbiItem[] = [
+export const abiRate: AbiItem[] = [
     {
         constant: true,
         inputs: [],
